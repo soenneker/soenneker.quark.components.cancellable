@@ -1,72 +1,52 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using Soenneker.Extensions.Task;
+using Soenneker.Quark.Components.Cancellable.Abstract;
+using Soenneker.Utils.AtomicResources;
 
 namespace Soenneker.Quark.Components.Cancellable;
 
-/// <summary>
-/// Base class that provides a per-component CancellationTokenSource
-/// and implements IAsyncDisposable so work is cancelled when the
-/// component is torn down.
-/// </summary>
-public abstract class CancellableComponent : ComponentBase, IAsyncDisposable
+///<inheritdoc cref="ICancellableComponent"/>
+public abstract class CancellableComponent : ComponentBase, ICancellableComponent
 {
-    private CancellationTokenSource? _cts;
+    private readonly AtomicResource<CancellationTokenSource> _atomic;
 
-    protected CancellationToken CancellationToken => (_cts ??= new CancellationTokenSource()).Token;
+    protected CancellableComponent() : this(CancellationToken.None)
+    {
+    }
 
     /// <summary>
-    /// Cancel any in-flight work (no-op if nothing started).
+    /// Optionally link to an external token so parent cancellation flows into this component.
     /// </summary>
-    protected Task Cancel()
+    protected CancellableComponent(CancellationToken linkedToken)
     {
-        CancellationTokenSource? cts = _cts;
+        _atomic = new AtomicResource<CancellationTokenSource>(
+            factory: () => linkedToken.CanBeCanceled ? CancellationTokenSource.CreateLinkedTokenSource(linkedToken) : new CancellationTokenSource(),
+            teardown: async cts =>
+            {
+                try
+                {
+                    await cts.CancelAsync().NoSync();
+                }
+                catch
+                {
+                    /* ignore */
+                }
+
+                cts.Dispose();
+            });
+    }
+
+    public CancellationToken CancellationToken => _atomic.GetOrCreate()?.Token ?? CancellationToken.None;
+
+    public Task Cancel()
+    {
+        CancellationTokenSource? cts = _atomic.TryGet();
         return cts is null ? Task.CompletedTask : cts.CancelAsync();
     }
 
-    /// <summary>
-    /// Cancel current work and swap in a fresh CTS for new work.
-    /// </summary>
-    protected async ValueTask ResetCancellation()
-    {
-        CancellationTokenSource? old = Interlocked.Exchange(ref _cts, new CancellationTokenSource());
+    public ValueTask ResetCancellation() => _atomic.Reset();
 
-        if (old is null)
-            return;
-
-        try
-        {
-            await old.CancelAsync().NoSync();
-        }
-        catch
-        {
-            /* ignore */
-        }
-
-        old.Dispose();
-    }
-
-    /// <summary>
-    /// Uses CancelAsync() and only allocates when there’s a CTS to tear down.
-    /// </summary>
-    public virtual async ValueTask DisposeAsync()
-    {
-        CancellationTokenSource? cts = Interlocked.Exchange(ref _cts, null);
-
-        if (cts is null)
-            return;
-
-        try
-        {
-            await cts.CancelAsync().ConfigureAwait(false);
-        }
-        catch
-        {
-            /* ignore */
-        }
-
-        cts.Dispose();
-    }
+    public virtual ValueTask DisposeAsync() => _atomic.DisposeAsync();
 }
