@@ -27,7 +27,7 @@ public abstract class CancellableComponent : ComponentBase, ICancellableComponen
             {
                 try
                 {
-                    await cts.CancelAsync().NoSync();
+                    await cts.CancelAsync();
                 }
                 catch
                 {
