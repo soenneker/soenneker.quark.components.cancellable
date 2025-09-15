@@ -45,8 +45,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.AspNetCore.Components" Version="9.0.9" />
-      <PackageReference Include="Soenneker.Extensions.Task" Version="3.0.105" />
-      <PackageReference Include="Soenneker.Utils.AtomicResources" Version="3.0.4" />
+      <PackageReference Include="Soenneker.Quark.Components" Version="3.0.12" />
+      <PackageReference Include="Soenneker.Utils.AtomicResources" Version="3.0.5" />
     </ItemGroup>
 </Project>

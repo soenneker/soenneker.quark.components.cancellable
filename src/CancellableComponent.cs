@@ -1,16 +1,20 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Components;
-using Soenneker.Extensions.Task;
 using Soenneker.Quark.Components.Cancellable.Abstract;
 using Soenneker.Utils.AtomicResources;
 
 namespace Soenneker.Quark.Components.Cancellable;
 
 ///<inheritdoc cref="ICancellableComponent"/>
-public abstract class CancellableComponent : ComponentBase, ICancellableComponent
+public abstract class CancellableComponent : Component, ICancellableComponent
 {
-    private readonly AtomicResource<CancellationTokenSource> _atomic;
+    public CancellationToken CancellationToken =>
+        Disposed || AsyncDisposed
+            ? CancellationToken.None
+            : _cancellationTokenSource.TryGet()
+                ?.Token ?? CancellationToken.None;
+
+    private readonly AtomicResource<CancellationTokenSource> _cancellationTokenSource;
 
     protected CancellableComponent() : this(CancellationToken.None)
     {
@@ -21,7 +25,7 @@ public abstract class CancellableComponent : ComponentBase, ICancellableComponen
     /// </summary>
     protected CancellableComponent(CancellationToken linkedToken)
     {
-        _atomic = new AtomicResource<CancellationTokenSource>(
+        _cancellationTokenSource = new AtomicResource<CancellationTokenSource>(
             factory: () => linkedToken.CanBeCanceled ? CancellationTokenSource.CreateLinkedTokenSource(linkedToken) : new CancellationTokenSource(),
             teardown: async cts =>
             {
@@ -38,15 +42,27 @@ public abstract class CancellableComponent : ComponentBase, ICancellableComponen
             });
     }
 
-    public CancellationToken CancellationToken => _atomic.GetOrCreate()?.Token ?? CancellationToken.None;
-
     public Task Cancel()
     {
-        CancellationTokenSource? cts = _atomic.TryGet();
+        CancellationTokenSource? cts = _cancellationTokenSource.TryGet();
         return cts is null ? Task.CompletedTask : cts.CancelAsync();
     }
 
-    public ValueTask ResetCancellation() => _atomic.Reset();
+    public ValueTask ResetCancellation() => _cancellationTokenSource.Reset();
 
-    public virtual ValueTask DisposeAsync() => _atomic.DisposeAsync();
+    protected override async ValueTask DisposeAsync(bool disposing)
+    {
+        if (disposing)
+            await _cancellationTokenSource.DisposeAsync();
+
+        await base.DisposeAsync(disposing);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+            _cancellationTokenSource.Dispose();
+
+        base.Dispose(disposing);
+    }
 }
