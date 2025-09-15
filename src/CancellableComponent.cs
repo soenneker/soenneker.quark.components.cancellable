@@ -50,19 +50,17 @@ public abstract class CancellableComponent : Component, ICancellableComponent
 
     public ValueTask ResetCancellation() => _cancellationTokenSource.Reset();
 
-    protected override async ValueTask DisposeAsync(bool disposing)
+    public override async ValueTask DisposeAsync()
     {
-        if (disposing)
-            await _cancellationTokenSource.DisposeAsync();
+        await _cancellationTokenSource.DisposeAsync();
 
-        await base.DisposeAsync(disposing);
+        await base.DisposeAsync();
     }
 
-    protected override void Dispose(bool disposing)
+    public override void Dispose()
     {
-        if (disposing)
-            _cancellationTokenSource.Dispose();
+        _cancellationTokenSource.Dispose();
 
-        base.Dispose(disposing);
+        base.Dispose();
     }
 }
