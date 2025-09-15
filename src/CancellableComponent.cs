@@ -9,7 +9,7 @@ namespace Soenneker.Quark.Components.Cancellable;
 public abstract class CancellableComponent : Component, ICancellableComponent
 {
     public CancellationToken CancellationToken =>
-        Disposed || AsyncDisposed
+        Disposed.IsTrue || AsyncDisposed.IsTrue
             ? CancellationToken.None
             : _cancellationTokenSource.TryGet()
                 ?.Token ?? CancellationToken.None;
