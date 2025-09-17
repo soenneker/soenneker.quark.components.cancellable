@@ -1,13 +1,13 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
+using Soenneker.Quark.Components.Abstract;
 
 namespace Soenneker.Quark.Components.Cancellable.Abstract;
 
 /// <summary>
 /// Contract for components that expose a cancellable, resettable async work scope.
 /// </summary>
-public interface ICancellableComponent : IAsyncDisposable
+public interface ICancellableComponent : IComponent
 {
     /// <summary>
     /// Gets the current token for in-flight work.
