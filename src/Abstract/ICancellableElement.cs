@@ -1,7 +1,9 @@
-﻿using Soenneker.Quark.Components.Abstract;
+﻿using Microsoft.AspNetCore.Components;
+using Soenneker.Quark.Components.Abstract;
 
 namespace Soenneker.Quark.Components.Cancellable.Abstract;
 
-internal interface ICancellableElement : IElement
+public interface ICancellableElement : IElement
 {
+    RenderFragment? ChildContent { get; set; }
 }
