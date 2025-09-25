@@ -1,6 +1,5 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Soenneker.Quark.Components.Cancellable.Abstract;
 using Soenneker.Utils.AtomicResources;
 
 namespace Soenneker.Quark.Components.Cancellable;

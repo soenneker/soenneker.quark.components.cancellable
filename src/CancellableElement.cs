@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Soenneker.Quark.Components.Cancellable.Abstract;
 
 namespace Soenneker.Quark.Components.Cancellable;
 
