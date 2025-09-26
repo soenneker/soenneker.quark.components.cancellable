@@ -2,7 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Soenneker.Utils.AtomicResources;
 
-namespace Soenneker.Quark.Components.Cancellable;
+namespace Soenneker.Quark;
 
 ///<inheritdoc cref="ICancellableComponent"/>
 public abstract class CancellableComponent : Component, ICancellableComponent
